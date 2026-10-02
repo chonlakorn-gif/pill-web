@@ -1,0 +1,92 @@
+<!doctype html><html lang="th"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ลิ้นชักเตือนยา</title>
+<link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600&display=swap" rel=stylesheet>
+<style>
+:root{--pk:#ff8fab;--lv:#e4d9ff;--yl:#fff3c4;--tx:#5b4b6b}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Mali','Sarabun',sans-serif;color:var(--tx);background:linear-gradient(160deg,#ffe9f1,#e8e4ff 50%,#d9f7ee);min-height:100vh;padding-bottom:100px}
+header{text-align:center;padding:28px 16px 6px}
+.pill{font-size:54px;display:inline-block;animation:bob 2.4s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px) rotate(-8deg)}}
+h1{margin:4px 0;font-size:28px;color:#e0557f}header p{margin:0}
+main{max-width:640px;margin:auto;padding:12px}
+.card{background:#fff;border-radius:24px;padding:16px;margin:14px 0;box-shadow:0 6px 18px #b58bd622;border-top:6px solid var(--pk)}
+.c2{border-color:#ffd56b}.c3{border-color:#8fd9b6}.c4{border-color:#b9a4ff}
+h3{margin:0 0 10px}
+input,select{font:inherit;width:100%;padding:10px 12px;margin:4px 0;border:2px solid var(--lv);border-radius:14px;background:#fffdff;color:var(--tx)}
+input:focus,select:focus{outline:none;border-color:var(--pk)}
+input[type=checkbox]{width:auto;margin:0}
+input[type=file]{background:#fff;border-style:dashed}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+label{display:block;font-size:14px}
+button{font:inherit;border:0;border-radius:999px;padding:10px 16px;margin:6px 6px 0 0;cursor:pointer;transition:transform .1s}
+button:active{transform:scale(.94)}
+.b2{background:var(--lv);color:var(--tx)}
+.del{background:#ffd9d9;color:#b33}
+.m{background:#fff8fb;border:2px dashed var(--pk);border-radius:20px;padding:12px;margin:10px 0}
+.m img,.ph{width:84px;height:84px;border-radius:20px;object-fit:cover;display:block;margin:6px 0}
+.ph{background:var(--yl);display:flex;align-items:center;justify-content:center;font-size:38px}
+.chip{display:inline-flex;align-items:center;gap:5px;background:var(--yl);border-radius:999px;padding:6px 12px;margin:3px 4px 3px 0;cursor:pointer}
+.bar{position:fixed;bottom:0;left:0;right:0;background:#fffc;backdrop-filter:blur(8px);padding:10px;text-align:center}
+.save{background:linear-gradient(135deg,#ff8fab,#ffb36b);color:#fff;font-size:18px;padding:12px 30px;box-shadow:0 4px 12px #ff8fab88}
+#st{display:block;font-size:13px;min-height:16px;margin-top:4px}
+</style>
+<header><div class=pill>💊</div><h1>ลิ้นชักเตือนยา</h1><p>กินยาตรงเวลา ดูแลตัวเองนะ 💗</p></header>
+<main>
+<section class=card><h3>🔑 เชื่อมต่อ GitHub</h3>
+<input id=repo placeholder="user/pill-data"><input id=tok type=password placeholder="Token (ใส่ครั้งเดียวพอ)">
+<button class=b2 onclick=saveCfg()>💾 จำค่า</button><button class=b2 onclick=load()>📥 โหลดข้อมูลเดิม</button></section>
+<section class="card c2"><h3>🍚 เวลามื้ออาหาร</h3><div class=grid>
+<label>🌅 เช้า<input type=time id=breakfast value=07:30></label><label>☀️ กลางวัน<input type=time id=lunch value=12:00></label>
+<label>🌙 เย็น<input type=time id=dinner value=18:00></label><label>😴 ก่อนนอน<input type=time id=bed value=21:30></label></div></section>
+<section class="card c3"><h3>⏰ การแจ้งเตือน</h3>
+<label>เตือนล่วงหน้า (นาที)<input type=number id=adv value=10></label>
+<label>📧 อีเมลที่รับแจ้งเตือน<input type=email id=email placeholder="you@gmail.com"></label>
+<label>🌡️ เตือนถ้าอุณหภูมิเกิน (°C)<input type=number id=tmax value=30></label></section>
+<section class="card c4"><h3>💊 รายการยา</h3><div id=meds></div><button class=b2 onclick=addMed()>➕ เพิ่มยา</button></section>
+</main>
+<div class=bar><button class=save onclick=save()>✨ บันทึกลงลิ้นชัก</button><span id=st></span></div>
+<script>
+const $=id=>document.getElementById(id),M=['breakfast','lunch','dinner','bed'],
+MN={breakfast:'เช้า',lunch:'กลางวัน',dinner:'เย็น',bed:'ก่อนนอน'};
+const EM={breakfast:'🌅',lunch:'☀️',dinner:'🌙',bed:'😴'};let meds=[];const st=s=>$('st').textContent=s;
+$('repo').value=localStorage.repo||'';$('tok').value=localStorage.tok||'';
+function saveCfg(){localStorage.repo=$('repo').value;localStorage.tok=$('tok').value;st('จำแล้ว')}
+async function gh(p,o={}){const x=await fetch(`https://api.github.com/repos/${localStorage.repo}/contents/${p}`,
+{...o,headers:{Authorization:'Bearer '+localStorage.tok,Accept:'application/vnd.github+json'}});
+if(x.status==404)return null;if(!x.ok)throw new Error(x.status);return x.json()}
+async function put(p,b64){const old=await gh(p);
+await gh(p,{method:'PUT',body:JSON.stringify({message:'update',content:b64,sha:old&&old.sha})})}
+const u8=s=>btoa(unescape(encodeURIComponent(s))),
+fromu8=b=>decodeURIComponent(escape(atob(b.replace(/\n/g,''))));
+function add(t,o){let[h,m]=t.split(':').map(Number),x=(h*60+m+o+1440)%1440;
+return String(x/60|0).padStart(2,'0')+':'+String(x%60).padStart(2,'0')}
+function addMed(){meds.push({name:'',dose:'',meals:[],off:30});draw()}
+function tg(i,k){const a=meds[i].meals;a.includes(k)?a.splice(a.indexOf(k),1):a.push(k)}
+function pic(i,f){if(!f)return;const im=new Image();im.onload=()=>{const c=document.createElement('canvas');
+c.width=300;c.height=im.height*300/im.width;c.getContext('2d').drawImage(im,0,0,c.width,c.height);
+meds[i].img=c.toDataURL('image/jpeg',.7);meds[i].photo=meds[i].photo||'photos/'+Date.now()+'.jpg';
+meds[i].dirty=1;draw()};im.src=URL.createObjectURL(f)}
+function draw(){$('meds').innerHTML=meds.map((m,i)=>`<div class=m>
+<input placeholder="💊 ชื่อยา" value="${m.name}" oninput="meds[${i}].name=this.value">
+<input placeholder="ขนาด เช่น 1 เม็ด" value="${m.dose}" oninput="meds[${i}].dose=this.value"><br>
+${M.map(k=>`<label class=chip><input type=checkbox ${m.meals.includes(k)?'checked':''} onchange="tg(${i},'${k}')">${EM[k]} ${MN[k]}</label>`).join(' ')}<br>
+<select onchange="meds[${i}].off=+this.value">${[[-30,'ก่อนอาหาร 30 นาที'],[0,'ตรงเวลามื้อ'],[30,'หลังอาหาร 30 นาที']]
+.map(([v,t])=>`<option value=${v} ${m.off==v?'selected':''}>${t}</option>`).join('')}</select>
+<input type=file accept=image/* onchange="pic(${i},this.files[0])">${m.img?`<img src="${m.img}">`:'<div class=ph>💊</div>'}
+<button class=del onclick="meds.splice(${i},1);draw()">🗑️ ลบ</button></div>`).join('')}
+async function save(){try{st('กำลังบันทึก...');const meals={};M.forEach(k=>meals[k]=$(k).value);const ev={};
+meds.forEach(m=>m.meals.forEach(k=>{const t=add(meals[k],m.off),
+lb=MN[k]+(m.off<0?' (ก่อนอาหาร)':m.off>0?' (หลังอาหาร)':'');
+(ev[t]=ev[t]||{t,label:lb,meds:[]}).meds.push(m.name+' '+m.dose)}));
+const events=Object.values(ev).sort((a,b)=>a.t<b.t?-1:1).map(e=>({t:e.t,label:e.label,meds:e.meds.join(', ')}));
+for(const m of meds)if(m.dirty){await put(m.photo,m.img.split(',')[1]);m.dirty=0}
+const clean=meds.map(({name,dose,meals,off,photo})=>({name,dose,meals,off,photo}));
+await put('schedule.json',u8(JSON.stringify({adv:+$('adv').value,email:$('email').value,tmax:+$('tmax').value,meals,meds:clean,events})));
+st('บันทึกแล้ว ✔ (Pico จะอัปเดตภายใน ~5 นาที)')}catch(e){st('ผิดพลาด: '+e.message)}}
+async function load(){try{const f=await gh('schedule.json');if(!f)return st('ยังไม่มีข้อมูล');
+const d=JSON.parse(fromu8(f.content));M.forEach(k=>$(k).value=d.meals[k]);$('adv').value=d.adv;
+$('email').value=d.email;$('tmax').value=d.tmax;meds=d.meds;draw();
+for(const m of meds)if(m.photo){const p=await gh(m.photo);if(p)m.img='data:image/jpeg;base64,'+p.content.replace(/\n/g,'')}
+draw();st('โหลดแล้ว')}catch(e){st('ผิดพลาด: '+e.message)}}
+</script></html>
